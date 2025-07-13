@@ -130,7 +130,7 @@ pub mod upgrade {
         pub created_at: NaiveDateTime,
     }
 
-    #[derive(Queryable, Identifiable)]
+    #[derive(Queryable, Identifiable, Selectable)]
     #[diesel(table_name = crate::schema::upgrade::session)]
     #[diesel(primary_key(session_id))]
     #[diesel(check_for_backend(diesel::pg::Pg))]

@@ -1,8 +1,6 @@
 use actix_web::{HttpResponse, Responder};
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use amqprs::callbacks::DefaultChannelCallback;
-use amqprs::channel::ExchangeDeclareArguments;
 use chrono::{Local};
 use diesel::dsl::insert_into;
 use diesel::QueryDsl;
@@ -11,9 +9,10 @@ use serde_json::Value::Null;
 use validator::Validate;
 use crate::database::db::establish_connection;
 use diesel::prelude::*;
+use rand::Rng;
 use crate::models::upgrade::{NewUser, User};
 use crate::schema::upgrade::users::dsl::*;
-use crate::utils::rabbitmq::create_rmq_connection;
+use crate::utils::rabbitmq::{create_rmq_connection, publish_message};
 use crate::utils::response::ApiResponse;
 
 #[derive(Serialize, Validate, Debug, Deserialize)]
@@ -38,21 +37,26 @@ pub async fn register_user(body: Json<RegisterUserBody>) -> impl Responder {
 
     let connection = &mut establish_connection();
 
-    let result = users.filter(email.eq(&user.email).or(username.eq(&user.username))).limit(1).select(User::as_select()).load(connection).expect("Error loading posts");
+    let result = users.filter(email.eq(&user.email).or(username.eq(&user.username))).limit(1).select(User::as_select()).load(connection).map_err(|_| "").unwrap();
 
     if result.len() > 0 {
         return HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(ApiResponse { success: false, status_code: 400, data: Null, message: String::from("user already exists with same email or password") });
     }
 
-    let hashed_password = bcrypt::hash(user.password, 10);
+    let hashed_password = bcrypt::hash(user.password, 10).map_err(|_| "Some error occurred");
 
     let insert_result = insert_into(users).values(NewUser { email: user.email, password_hash: hashed_password.unwrap(), phone_number: String::from(""), first_name: user.first_name, last_name: user.last_name, username: user.username, updated_at: Some(Local::now().naive_local()) }).execute(connection);
 
     if insert_result.is_err() {
-        return HttpResponse::Ok().status(StatusCode::INTERNAL_SERVER_ERROR).json(ApiResponse { success: false, status_code: 500, data: Null, message: String::from("Failed to register new user") });
+        return HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(ApiResponse { success: false, status_code: 400, data: Null, message: String::from("Failed to register new user") });
     }
 
-    // TODO: Send otp to the mail box and get email_id in return
+    let otp = rand::thread_rng().gen_range(100000..999999);
 
-    HttpResponse::Ok().json(ApiResponse { success: true, status_code: 200, data: Null, message: String::from("User registered successfully") })
+    let publish_result = publish_message("otp", String::from(format!("\"otp\": {}, \"transport_method\": \"email\"", otp)).into_bytes()).await;
+
+    match publish_result {
+        Ok(_) =>  HttpResponse::Ok().json(ApiResponse { success: true, status_code: 200, data: Null, message: String::from("User registered successfully") }),
+        Err(_) =>  HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(ApiResponse { success: false, status_code: 400, data: Null, message: String::from("Failed to send otp") })
+    }
 }
