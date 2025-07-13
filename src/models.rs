@@ -3,11 +3,39 @@ use chrono::NaiveDateTime;
 use uuid::Uuid;
 
 pub mod upgrade {
-    use crate::schema::upgrade::sql_types::{AuthMethod, BusinessType, Effects, LastLoginMethod, PaymentStatusEnum, RequestStatus, Resources, Roles, SubsStatusEnum, Targets};
+    use serde::Deserialize;
+    use crate::schema::upgrade::sql_types::{AuthMethod, BusinessType, Effects, RequestStatus, Resources, SubsStatusEnum, Targets};
     use super::*;
 
-    #[derive(Queryable, Selectable)]
+
+    #[derive(Debug, diesel_derive_enum::DbEnum)]
+    #[db_enum(existing_type_path = "crate::schema::upgrade::sql_types::Roles")]
+    pub enum Roles {
+        Admin,
+        Streamer,
+        Viewer
+    }
+
+    #[derive(Debug, diesel_derive_enum::DbEnum)]
+    #[db_enum(existing_type_path = "crate::schema::upgrade::sql_types::LastLoginMethod")]
+    pub enum LastLoginMethod {
+        EmailPassword,
+        SsoGoogle,
+        SsoGithub
+    }
+
+    #[derive(Debug, diesel_derive_enum::DbEnum)]
+    #[db_enum(existing_type_path = "crate::schema::upgrade::sql_types::PaymentStatusEnum")]
+    pub enum PaymentStatusEnum {
+        Idle,
+        Created,
+        Attempted,
+        Paid
+    }
+
+    #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::chats)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Chat {
         pub id: i32,
         pub stream_uid: Option<String>,
@@ -19,13 +47,14 @@ pub mod upgrade {
         pub down_votes: Vec<Option<i32>>,
         pub reply_to_id: Option<i32>,
         pub pinned: bool,
-        pub payment_status: PaymentStatusEnum,
+        pub payment_status: Option<PaymentStatusEnum>,
         pub updated_at: Option<NaiveDateTime>,
         pub created_at: NaiveDateTime,
     }
 
-    #[derive(Queryable, Identifiable, Selectable)]
+    #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::emotes)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Emote {
         pub id: i32,
         pub name: String,
@@ -38,6 +67,7 @@ pub mod upgrade {
 
     #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::orders)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Order {
         pub id: i32,
         pub payment_session_id: Option<String>,
@@ -54,6 +84,7 @@ pub mod upgrade {
 
     #[derive(Debug, Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::payouts)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Payout {
         pub id: i32,
         pub user_id: Option<i32>,
@@ -72,6 +103,7 @@ pub mod upgrade {
 
     #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::permissions)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Permission {
         pub id: i32,
         pub target: Targets,
@@ -86,6 +118,7 @@ pub mod upgrade {
 
     #[derive(Debug, Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::plans)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Plan {
         pub id: i32,
         pub name: String,
@@ -100,6 +133,7 @@ pub mod upgrade {
     #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::session)]
     #[diesel(primary_key(session_id))]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Session {
         pub session_id: Uuid,
         pub user_id: i32,
@@ -125,6 +159,7 @@ pub mod upgrade {
 
     #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::streamer_request)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct StreamerRequest {
         pub id: i32,
         pub user_id: i32,
@@ -153,6 +188,7 @@ pub mod upgrade {
 
     #[derive(Debug, Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::streams)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Stream {
         pub id: i32,
         pub streaming_uid: String,
@@ -171,6 +207,7 @@ pub mod upgrade {
 
     #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::subscriptions)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct Subscription {
         pub id: i32,
         pub plan_id: i32,
@@ -184,6 +221,7 @@ pub mod upgrade {
 
     #[derive(Debug, Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::token_table)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct TokenTable {
         pub id: i32,
         pub user_id: i32,
@@ -197,8 +235,22 @@ pub mod upgrade {
         pub created_at: NaiveDateTime,
     }
 
-    #[derive(Queryable, Identifiable)]
+    #[derive(Insertable)]
     #[diesel(table_name = crate::schema::upgrade::users)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
+    pub struct NewUser {
+        pub first_name: String,
+        pub last_name: String,
+        pub username: String,
+        pub email: String,
+        pub phone_number: String,
+        pub password_hash: String,
+        pub updated_at: Option<NaiveDateTime>
+    }
+
+    #[derive(Debug, Queryable, Identifiable, Selectable)]
+    #[diesel(table_name = crate::schema::upgrade::users)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
     pub struct User {
         pub id: i32,
         pub first_name: String,

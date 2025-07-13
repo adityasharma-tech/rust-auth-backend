@@ -30,7 +30,6 @@ async fn main() -> std::io::Result<()> {
     println!("Starting server on port {}", port);
 
     HttpServer::new(|| App::new()
-        .app_data(34)
             .service(health_check)
             .service(auth_routes())
         )
