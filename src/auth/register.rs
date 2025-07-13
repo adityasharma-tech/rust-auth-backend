@@ -1,6 +1,8 @@
 use actix_web::{HttpResponse, Responder};
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
+use amqprs::callbacks::DefaultChannelCallback;
+use amqprs::channel::ExchangeDeclareArguments;
 use chrono::{Local};
 use diesel::dsl::insert_into;
 use diesel::QueryDsl;
@@ -11,6 +13,7 @@ use crate::database::db::establish_connection;
 use diesel::prelude::*;
 use crate::models::upgrade::{NewUser, User};
 use crate::schema::upgrade::users::dsl::*;
+use crate::utils::rabbitmq::create_rmq_connection;
 use crate::utils::response::ApiResponse;
 
 #[derive(Serialize, Validate, Debug, Deserialize)]
