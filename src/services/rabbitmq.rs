@@ -1,6 +1,4 @@
 use crate::utils::env::get_env;
-use actix_web::cookie::time;
-use actix_web::error::HttpError;
 use amqprs::BasicProperties;
 use amqprs::callbacks::{DefaultChannelCallback, DefaultConnectionCallback};
 use amqprs::channel::{

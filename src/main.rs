@@ -1,17 +1,20 @@
+use actix_web::{App, HttpResponse, HttpServer, Responder, get, web};
 use serde_json;
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 use serde_json::Value::Null;
+use uaparser::UserAgentParser;
 
 //...
-mod utils;
 mod auth;
-mod validators;
 mod database;
-mod schema;
 mod models;
+mod schema;
+mod utils;
+mod validators;
+mod services;
 
 //...
 use crate::auth::auth_routes;
+use crate::database::db::get_db_connection;
 
 #[get("/healthCheck")]
 async fn health_check() -> impl Responder {
@@ -19,7 +22,7 @@ async fn health_check() -> impl Responder {
         message: String::from("Server is healthy"),
         data: Null,
         status_code: 200,
-        success: true
+        success: true,
     })
 }
 
@@ -29,12 +32,15 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting server on port {}", port);
 
-    HttpServer::new(|| App::new()
+    let pool = get_db_connection().unwrap();
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(pool.clone()))
             .service(health_check)
             .service(auth_routes())
-        )
-        .bind(("0.0.0.0", port))?
-        .run()
-        .await
+    })
+    .bind(("0.0.0.0", port))?
+    .run()
+    .await
 }
-

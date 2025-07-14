@@ -1,19 +1,20 @@
-use diesel::prelude::*;
 use chrono::NaiveDateTime;
+use diesel::prelude::*;
 use uuid::Uuid;
 
 pub mod upgrade {
-    use serde::Deserialize;
-    use crate::schema::upgrade::sql_types::{AuthMethod, BusinessType, Effects, RequestStatus, Resources, SubsStatusEnum, Targets};
     use super::*;
-
+    use crate::schema::upgrade::sql_types::{
+        BusinessType, Effects, RequestStatus, Resources, SubsStatusEnum, Targets,
+    };
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, diesel_derive_enum::DbEnum)]
     #[db_enum(existing_type_path = "crate::schema::upgrade::sql_types::Roles")]
     pub enum Roles {
         Admin,
         Streamer,
-        Viewer
+        Viewer,
     }
 
     #[derive(Debug, diesel_derive_enum::DbEnum)]
@@ -21,7 +22,15 @@ pub mod upgrade {
     pub enum LastLoginMethod {
         EmailPassword,
         SsoGoogle,
-        SsoGithub
+        SsoGithub,
+    }
+
+    #[derive(Debug, diesel_derive_enum::DbEnum)]
+    #[db_enum(existing_type_path = "crate::schema::upgrade::sql_types::AuthMethod")]
+    pub enum AuthMethod {
+        EmailPassword,
+        SsoGoogle,
+        SsoGithub,
     }
 
     #[derive(Debug, diesel_derive_enum::DbEnum)]
@@ -30,7 +39,7 @@ pub mod upgrade {
         Idle,
         Created,
         Attempted,
-        Paid
+        Paid,
     }
 
     #[derive(Queryable, Identifiable)]
@@ -157,6 +166,15 @@ pub mod upgrade {
         pub created_at: NaiveDateTime,
     }
 
+    #[derive(Selectable)]
+    #[diesel(table_name = crate::schema::upgrade::session)]
+    #[diesel(primary_key(session_id))]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
+    pub struct SelectSession {
+        user_id: i32,
+        session_id: Uuid,
+    }
+
     #[derive(Queryable, Identifiable)]
     #[diesel(table_name = crate::schema::upgrade::streamer_request)]
     #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -245,7 +263,7 @@ pub mod upgrade {
         pub email: String,
         pub phone_number: String,
         pub password_hash: String,
-        pub updated_at: Option<NaiveDateTime>
+        pub updated_at: Option<NaiveDateTime>,
     }
 
     #[derive(Debug, Queryable, Identifiable, Selectable)]
