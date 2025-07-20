@@ -18,7 +18,7 @@ pub mod upgrade {
         #[diesel(postgres_type(name = "last_login_method", schema = "upgrade"))]
         pub struct LastLoginMethod;
 
-        #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType, Debug)]
+        #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
         #[diesel(postgres_type(name = "payment_status_enum", schema = "upgrade"))]
         pub struct PaymentStatusEnum;
 

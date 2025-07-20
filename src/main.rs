@@ -1,7 +1,6 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, get, web};
 use serde_json;
 use serde_json::Value::Null;
-use uaparser::UserAgentParser;
 
 //...
 mod auth;

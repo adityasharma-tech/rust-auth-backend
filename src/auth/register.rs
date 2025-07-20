@@ -1,5 +1,5 @@
 use crate::database::db::get_db_connection;
-use crate::models::upgrade::{NewUser, User};
+use crate::models::upgrade::{LastLoginMethod, NewUser, User};
 use crate::schema::upgrade::users::dsl::*;
 use crate::services::rabbitmq::publish_message;
 use crate::utils::response::ApiResponse;
@@ -42,7 +42,6 @@ pub async fn register_user(pool: PgPool, body: Json<RegisterUserBody>) -> impl R
         .limit(1)
         .select(User::as_select())
         .load(connection)
-        .map_err(|_| "")
         .unwrap();
 
     if result.len() > 0 {
@@ -67,11 +66,13 @@ pub async fn register_user(pool: PgPool, body: Json<RegisterUserBody>) -> impl R
             last_name: user.last_name,
             username: user.username,
             updated_at: Some(Local::now().naive_local()),
+            last_login_method: Some(LastLoginMethod::EmailPassword)
         })
-        .execute(connection);
+        .returning(User::as_select())
+        .get_results(connection);
 
     if insert_result.is_err() {
-        return HttpResponse::Ok()
+        HttpResponse::Ok()
             .status(StatusCode::BAD_REQUEST)
             .json(ApiResponse {
                 success: false,
@@ -79,13 +80,14 @@ pub async fn register_user(pool: PgPool, body: Json<RegisterUserBody>) -> impl R
                 data: Null,
                 message: String::from("Failed to register new user"),
             });
+        panic!("{:?}", insert_result.err());
     }
 
     let otp = rand::thread_rng().gen_range(100000..999999);
 
     let publish_result = publish_message(
         "otp",
-        String::from(format!("\"otp\": {}, \"transport_method\": \"email\", \"identifier\": \"{}\"", otp, result[0].email)).into_bytes(),
+        String::from(format!("\"otp\": {}, \"transport_method\": \"email\", \"identifier\": \"{}\"", otp, insert_result.unwrap()[0].email)).into_bytes(),
     )
     .await;
 

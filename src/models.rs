@@ -139,6 +139,8 @@ pub mod upgrade {
         pub created_at: NaiveDateTime,
     }
 
+
+
     #[derive(Queryable, Identifiable, Selectable)]
     #[diesel(table_name = crate::schema::upgrade::session)]
     #[diesel(primary_key(session_id))]
@@ -164,6 +166,27 @@ pub mod upgrade {
         pub os: Option<String>,
         pub updated_at: Option<NaiveDateTime>,
         pub created_at: NaiveDateTime,
+    }
+
+    #[derive(Insertable)]
+    #[diesel(table_name = crate::schema::upgrade::session)]
+    #[diesel(check_for_backend(diesel::pg::Pg))]
+    pub struct NewSession {
+        pub user_id: i32,
+        pub auth_method: AuthMethod,
+        pub token: String,
+        pub user_agent: String,
+        pub ip_address: Option<String>,
+        pub platform: Option<String>,
+        pub languages: Vec<Option<String>>,
+        pub mobile: Option<bool>,
+        pub expire_at: NaiveDateTime,
+        pub city: Option<String>,
+        pub region: Option<String>,
+        pub timezone: Option<String>,
+        pub telecom: Option<String>,
+        pub country: Option<String>,
+        pub os: Option<String>
     }
 
     #[derive(Selectable)]
@@ -264,6 +287,7 @@ pub mod upgrade {
         pub phone_number: String,
         pub password_hash: String,
         pub updated_at: Option<NaiveDateTime>,
+        pub last_login_method: Option<LastLoginMethod>
     }
 
     #[derive(Debug, Queryable, Identifiable, Selectable)]

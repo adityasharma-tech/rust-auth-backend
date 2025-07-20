@@ -13,7 +13,7 @@ pub async fn create_rmq_connection() -> Result<Connection, String> {
         get_env().rabbitmq_port,
         get_env().rabbitmq_username.as_str(),
         get_env().rabbitmq_password.as_str(),
-    ))
+    ).virtual_host("akmotfaj"))
     .await
     .map_err(|_| "Failed to create connection to queue_server")?;
 

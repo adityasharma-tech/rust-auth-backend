@@ -4,13 +4,13 @@ CREATE SCHEMA "upgrade";
 CREATE TYPE "upgrade"."payment_status_enum" AS ENUM('idle', 'created', 'attempted', 'paid');--> statement-breakpoint
 CREATE TYPE "upgrade"."business_type" AS ENUM('llp', 'ngo', 'individual', 'partnership', 'proprietorship', 'public_limited', 'private_limited', 'trust', 'society', 'not_yet_registered', 'educational_institutes');--> statement-breakpoint
 CREATE TYPE "upgrade"."request_status" AS ENUM('pending', 'account_created', 'stakeholder_created', 'tnc_accepted', 'account_added', 'done');--> statement-breakpoint
-CREATE TYPE "upgrade"."last_login_method" AS ENUM('email-password', 'sso/google', 'sso/github');--> statement-breakpoint
+CREATE TYPE "upgrade"."last_login_method" AS ENUM('email_password', 'sso_google', 'sso_github');--> statement-breakpoint
 CREATE TYPE "upgrade"."roles" AS ENUM('streamer', 'viewer', 'admin');--> statement-breakpoint
 CREATE TYPE "upgrade"."effects" AS ENUM('allow', 'disallow');--> statement-breakpoint
 CREATE TYPE "upgrade"."resources" AS ENUM('stream', 'user', 'chat', 'order', 'streamer-requests');--> statement-breakpoint
 CREATE TYPE "upgrade"."targets" AS ENUM('streamer', 'viewer', 'admin', 'user');--> statement-breakpoint
 CREATE TYPE "upgrade"."subsStatusEnum" AS ENUM('created', 'authenticated', 'active', 'pending', 'halted', 'cancelled', 'completed', 'expired');--> statement-breakpoint
-CREATE TYPE "upgrade"."auth_method" AS ENUM('email-password', 'sso/google', 'sso/github');--> statement-breakpoint
+CREATE TYPE "upgrade"."auth_method" AS ENUM('email_password', 'sso_google', 'sso_github');--> statement-breakpoint
 CREATE TABLE "upgrade"."chats" (
                                    "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "upgrade"."chats_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
                                    "stream_uid" varchar,
@@ -127,7 +127,7 @@ CREATE TABLE "upgrade"."users" (
                                    "watch_history" integer[] DEFAULT ARRAY[]::integer[] NOT NULL,
                                    "updated_at" timestamp,
                                    "created_at" timestamp DEFAULT now() NOT NULL,
-                                   "last_login_method" "upgrade"."last_login_method" DEFAULT 'email-password',
+                                   "last_login_method" "upgrade"."last_login_method" DEFAULT 'email_password',
                                    CONSTRAINT "users_username_unique" UNIQUE("username"),
                                    CONSTRAINT "users_email_unique" UNIQUE("email")
 );
@@ -183,7 +183,7 @@ CREATE TABLE "upgrade"."emotes" (
 CREATE TABLE "upgrade"."session" (
                                      "session_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
                                      "user_id" integer NOT NULL,
-                                     "auth_method" "upgrade"."auth_method" DEFAULT 'email-password' NOT NULL,
+                                     "auth_method" "upgrade"."auth_method" DEFAULT 'email_password' NOT NULL,
                                      "last_active" timestamp DEFAULT now() NOT NULL,
                                      "invalid" boolean DEFAULT false NOT NULL,
                                      "token" varchar(255) NOT NULL,
