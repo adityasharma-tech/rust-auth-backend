@@ -23,7 +23,6 @@ use crate::utils::env::get_env;
 use crate::utils::fetch_location_data;
 
 
-
 #[derive(Debug, Validate, Deserialize, Serialize)]
 pub struct LoginUserBody {
     #[validate(length(min = 3))]
@@ -118,7 +117,7 @@ pub async fn login_user(pool: PgPool, req: HttpRequest, body: Json<LoginUserBody
 
     let ip_addr = req.peer_addr().unwrap();
 
-    let ua_parser = UserAgentParser::from_yaml("../../ua_regexes.yaml").unwrap();
+    let ua_parser = UserAgentParser::from_yaml("./ua_regexes.yaml").unwrap();
     let user_agent = req.headers().get("user-agent").unwrap().to_str().unwrap();
 
     let ua  = ua_parser.parse(user_agent);

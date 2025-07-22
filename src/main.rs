@@ -10,6 +10,7 @@ mod schema;
 mod utils;
 mod validators;
 mod services;
+mod middleware;
 
 //...
 use crate::auth::auth_routes;
